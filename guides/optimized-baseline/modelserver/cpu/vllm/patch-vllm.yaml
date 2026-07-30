@@ -13,13 +13,13 @@ spec:
             - "Qwen/Qwen2.5-0.5B-Instruct"
             - "--disable-access-log-for-endpoints=/health,/metrics,/v1/models"
             - "--disable-hybrid-kv-cache-manager"
-            - "--max_model_len=8192"
+            - "--max_model_len=4096"
             # Uncomment for distributed tracing
             # - "--otlp-traces-endpoint=http://otel-collector:4317"
             # - "--collect-detailed-traces=all"
           env:
             - name: VLLM_CPU_KVCACHE_SPACE
-              value: "8"
+              value: "4"
             - name: VLLM_CPU_NUM_OF_RESERVED_CPU
               value: "1"
             # Uncomment for distributed tracing env vars
@@ -41,11 +41,11 @@ spec:
                 - SYS_NICE
           resources:
             limits:
-              memory: 16Gi
+              memory: 4Gi
               cpu: "4"
             requests:
               cpu: "4"
-              memory: 10Gi
+              memory: 4Gi
           volumeMounts:
             - mountPath: /dev/shm
               name: dshm

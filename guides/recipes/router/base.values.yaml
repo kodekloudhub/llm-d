@@ -10,9 +10,9 @@ router:
     resources:
       requests:
         cpu: "1"
-        memory: 2Gi
+        memory: 1Gi
       limits:
-        memory: 8Gi
+        memory: 1Gi
 
   inferencePool:
     failureMode: "FailOpen"
