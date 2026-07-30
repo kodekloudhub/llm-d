@@ -12,7 +12,7 @@ For this quickstart, we will use the **Standalone Mode** deployment, which is th
 
   ```bash
     export branch="release-0.8"
-    git clone https://github.com/chris-short/llm-d.git && cd llm-d && git checkout ${branch}
+    git clone https://github.com/kodekloudhub/llm-d.git && cd llm-d && git checkout ${branch}
   ```
 
 - Set the following environment variables:
