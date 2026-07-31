@@ -13,6 +13,7 @@ spec:
             - "Qwen/Qwen2.5-0.5B-Instruct"
             - "--disable-access-log-for-endpoints=/health,/metrics,/v1/models"
             - "--disable-hybrid-kv-cache-manager"
+            - "--enable-prefix-caching"
             - "--max_model_len=8192"
             # Uncomment for distributed tracing
             # - "--otlp-traces-endpoint=http://otel-collector:4317"

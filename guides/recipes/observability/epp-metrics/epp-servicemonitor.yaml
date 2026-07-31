@@ -1,0 +1,37 @@
+# ServiceMonitor that scrapes the EPP (Endpoint Picker) /metrics endpoint,
+# exposing the llm_d_epp_* metric family (llm_d_epp_ready_endpoints,
+# llm_d_epp_request_total, llm_d_epp_flow_control_queue_size, ...) to Prometheus.
+#
+# The EPP serves metrics over plain HTTP on the `http-metrics` port (9090) and
+# gates them behind bearer-token auth, so we attach the token created in
+# epp-metrics-rbac.yaml. Apply that RBAC first, or scrapes return HTTP 401/500.
+#
+# The `release: llmd` label matches the kube-prometheus-stack Helm release so the
+# Prometheus Operator selects this ServiceMonitor. Change it if your release name
+# differs, or drop it if your Prometheus uses an empty (match-all) selector.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: quickstart-epp
+  namespace: llm-d
+  labels:
+    app.kubernetes.io/name: quickstart-epp
+    app.kubernetes.io/part-of: llm-d
+    release: llmd
+spec:
+  namespaceSelector:
+    matchNames:
+      - llm-d
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quickstart-epp
+  endpoints:
+    - port: http-metrics
+      scheme: http
+      path: /metrics
+      interval: 30s
+      authorization:
+        type: Bearer
+        credentials:
+          name: quickstart-epp-metrics-token
+          key: token

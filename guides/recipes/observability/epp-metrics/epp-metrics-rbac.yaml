@@ -1,0 +1,86 @@
+# RBAC required for Prometheus to scrape the EPP (Endpoint Picker) /metrics endpoint.
+#
+# The EPP protects /metrics with controller-runtime's authn/authz filter, which
+# validates the scrape's bearer token via a Kubernetes TokenReview and then
+# authorizes it with a SubjectAccessReview. Two things are therefore required:
+#
+#   1. The EPP ServiceAccount must be allowed to create TokenReviews /
+#      SubjectAccessReviews (the `system:auth-delegator` ClusterRole). Without
+#      this, every scrape fails with HTTP 401/500 and no llm_d_epp_* metrics are
+#      ingested.
+#   2. A dedicated read-only identity whose token Prometheus presents, allowed to
+#      GET the /metrics nonResourceURL.
+#
+# Names/namespace below match the `quickstart` release in the `llm-d` namespace.
+# Adapt the `quickstart-epp` prefix and `namespace: llm-d` for other releases.
+---
+# 1. Let the EPP authenticate & authorize incoming scrape tokens.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: quickstart-epp-auth-delegator
+  labels:
+    app.kubernetes.io/name: quickstart-epp
+    app.kubernetes.io/part-of: llm-d
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: quickstart-epp
+    namespace: llm-d
+---
+# 2. Read-only identity Prometheus uses to scrape the EPP.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quickstart-epp-metrics-reader
+  namespace: llm-d
+  labels:
+    app.kubernetes.io/name: quickstart-epp
+    app.kubernetes.io/part-of: llm-d
+---
+# 3. Long-lived token for that identity, referenced by the ServiceMonitor's
+#    `authorization.credentials`. The token controller populates the `token` key.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quickstart-epp-metrics-token
+  namespace: llm-d
+  labels:
+    app.kubernetes.io/name: quickstart-epp
+    app.kubernetes.io/part-of: llm-d
+  annotations:
+    kubernetes.io/service-account.name: quickstart-epp-metrics-reader
+type: kubernetes.io/service-account-token
+---
+# 4. Permission to GET /metrics (the nonResourceURL the EPP's SAR checks).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: quickstart-epp-metrics-reader
+  labels:
+    app.kubernetes.io/name: quickstart-epp
+    app.kubernetes.io/part-of: llm-d
+rules:
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: quickstart-epp-metrics-reader
+  labels:
+    app.kubernetes.io/name: quickstart-epp
+    app.kubernetes.io/part-of: llm-d
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: quickstart-epp-metrics-reader
+subjects:
+  - kind: ServiceAccount
+    name: quickstart-epp-metrics-reader
+    namespace: llm-d
